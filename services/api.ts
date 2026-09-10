@@ -1,22 +1,36 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from "axios";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+	baseURL: process.env.NEXT_PUBLIC_API_URL,
+	headers: {
+		"Content-Type": "application/json",
+	},
+	withCredentials: true,
 });
 
-// Interceptor para injetar o token em todas as requisições automaticamente
-api.interceptors.request.use((config) => {
-  const token = Cookies.get('gallery_token');
+api.interceptors.response.use(
+	(response) => {
+		// Retorna a resposta normal se deu tudo certo (2xx)
+		return response;
+	},
+	(error) => {
+		// Se a API não respondeu ou deu erro de rede
+		if (!error.response) {
+			return Promise.reject(error);
+		}
 
-  console.log("baseUrl", process.env.NEXT_PUBLIC_API_URL);
+		const { status, config } = error.response;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+		// Evita loop infinito de redirecionamento se o erro 401/403 acontecer na própria tela de Login
+		const isAuthRoute = config.url?.includes("/auth/login");
 
-  return config;
-});
+		if ((status === 401 || status === 403) && !isAuthRoute) {
+			if (typeof window !== "undefined") {
+				// Redireciona o usuário para o login limpando a pilha de navegação
+				window.location.href = "/login?sessionExpired=true";
+			}
+		}
+
+		return Promise.reject(error);
+	},
+);
