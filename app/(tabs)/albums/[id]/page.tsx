@@ -54,9 +54,9 @@ export default function AlbumDetailsPage() {
 	// Verifica se o usuário atual é o criador do álbum
 	const isCreator = Boolean(
 		album?.criador &&
-			user &&
-			(String(album.criador.id) === String(user.id) ||
-				album.criador.email?.toLowerCase() === user.email?.toLowerCase()),
+		user &&
+		(album.criador.id === user.id ||
+			album.criador.email?.toLowerCase() === user.email?.toLowerCase()),
 	);
 
 	const existingPhotoIds = album?.images?.map((img) => img.id) || [];
@@ -66,7 +66,10 @@ export default function AlbumDetailsPage() {
 		try {
 			if (deleteConfirm.type === "album") {
 				await deleteAlbum();
-			} else if (deleteConfirm.type === "photo" && deleteConfirm.singlePhotoId) {
+			} else if (
+				deleteConfirm.type === "photo" &&
+				deleteConfirm.singlePhotoId
+			) {
 				await removePhotoFromAlbum(deleteConfirm.singlePhotoId);
 			} else if (deleteConfirm.type === "batch_photos") {
 				await removeSelectedPhotosFromAlbum();
@@ -98,9 +101,12 @@ export default function AlbumDetailsPage() {
 				<div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-400">
 					<Icon.AlertCircle className="w-8 h-8" />
 				</div>
-				<h3 className="text-lg font-semibold text-foreground">Álbum não encontrado</h3>
+				<h3 className="text-lg font-semibold text-foreground">
+					Álbum não encontrado
+				</h3>
 				<p className="text-sm text-foreground2 max-w-sm mt-1 mb-6">
-					{error || "O álbum solicitado não existe ou você não possui permissão para acessá-lo."}
+					{error ||
+						"O álbum solicitado não existe ou você não possui permissão para acessá-lo."}
 				</p>
 				<Link
 					href="/albums"
@@ -145,8 +151,11 @@ export default function AlbumDetailsPage() {
 								)}
 							</div>
 							<p className="text-xs text-foreground2 mt-0.5">
-								Criado por <span className="text-foreground">{album.criador.nome}</span> (
-								{album.criador.email})
+								Criado por{" "}
+								<span className="text-foreground">
+									{album.criador.nome}
+								</span>{" "}
+								({album.criador.email})
 							</p>
 						</div>
 					</div>
@@ -170,7 +179,9 @@ export default function AlbumDetailsPage() {
 							className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface1 hover:bg-white/10 text-foreground text-xs font-semibold border border-white/10 transition-all cursor-pointer"
 						>
 							<Icon.Users className="w-4 h-4 text-foreground2" />
-							<span>Colaboradores ({1 + album.convidados.length})</span>
+							<span>
+								Colaboradores ({1 + album.convidados.length})
+							</span>
 						</button>
 
 						{/* Baixar Álbum ZIP */}
@@ -198,7 +209,12 @@ export default function AlbumDetailsPage() {
 						{isCreator && (
 							<button
 								type="button"
-								onClick={() => setDeleteConfirm({ isOpen: true, type: "album" })}
+								onClick={() =>
+									setDeleteConfirm({
+										isOpen: true,
+										type: "album",
+									})
+								}
 								className="p-2 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-400 transition-all cursor-pointer"
 								title="Excluir este álbum"
 							>
@@ -222,7 +238,9 @@ export default function AlbumDetailsPage() {
 								}`}
 							>
 								<Icon.Maximize className="w-3 h-3" />
-								<span className="hidden sm:inline">Justificada</span>
+								<span className="hidden sm:inline">
+									Justificada
+								</span>
 							</button>
 
 							<button
@@ -235,7 +253,9 @@ export default function AlbumDetailsPage() {
 								}`}
 							>
 								<Icon.Columns3 className="w-3 h-3" />
-								<span className="hidden sm:inline">Colunas</span>
+								<span className="hidden sm:inline">
+									Colunas
+								</span>
 							</button>
 
 							<button
@@ -248,7 +268,9 @@ export default function AlbumDetailsPage() {
 								}`}
 							>
 								<Icon.LayoutGrid className="w-3 h-3" />
-								<span className="hidden sm:inline">Masonry</span>
+								<span className="hidden sm:inline">
+									Masonry
+								</span>
 							</button>
 						</div>
 					</div>
@@ -261,9 +283,12 @@ export default function AlbumDetailsPage() {
 					<div className="w-16 h-16 rounded-full bg-surface1/80 flex items-center justify-center mb-4 text-foreground2">
 						<Icon.ImageIcon className="w-8 h-8 opacity-70" />
 					</div>
-					<h3 className="text-lg font-semibold text-foreground">Este álbum ainda não possui fotos</h3>
+					<h3 className="text-lg font-semibold text-foreground">
+						Este álbum ainda não possui fotos
+					</h3>
 					<p className="text-sm text-foreground2 max-w-sm mt-1 mb-6">
-						Adicione fotos da sua galeria para preencher este álbum e começar a compartilhá-lo.
+						Adicione fotos da sua galeria para preencher este álbum
+						e começar a compartilhá-lo.
 					</p>
 					<button
 						type="button"
@@ -354,11 +379,17 @@ export default function AlbumDetailsPage() {
 							? `Deseja remover as ${selectedPhotoIds.size} foto(s) selecionadas deste álbum?`
 							: "Deseja remover esta foto do álbum?"
 				}
-				confirmText={deleteConfirm.type === "album" ? "Excluir Álbum" : "Remover do Álbum"}
+				confirmText={
+					deleteConfirm.type === "album"
+						? "Excluir Álbum"
+						: "Remover do Álbum"
+				}
 				isDestructive
 				loading={actionLoading}
 				onConfirm={handleConfirmAction}
-				onCancel={() => setDeleteConfirm({ isOpen: false, type: "album" })}
+				onCancel={() =>
+					setDeleteConfirm({ isOpen: false, type: "album" })
+				}
 			/>
 		</div>
 	);
