@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
 			},
 		],
 		dangerouslyAllowLocalIP: true,
+		qualities: [75, 85, 100],
 	},
 };
 

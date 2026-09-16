@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
+import bgImage from "@/assets/collage.jpg";
 import { AxiosError } from "axios";
+import Image from "next/image";
 
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
@@ -27,7 +29,7 @@ export default function LoginPage() {
 				setError("Erro desconhecido. Tente novamente.");
 			else
 				setError(
-					err.response?.data?.message ||
+					err.response?.data?.error ||
 						"Erro ao fazer login. Tente novamente.",
 				);
 		} finally {
@@ -36,20 +38,31 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gray-50">
-			<div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-lg">
+		<div className="relative flex min-h-screen items-center justify-center bg-gray-50">
+			<Image
+				src={bgImage}
+				alt="Background Online Gallery"
+				fill
+				priority
+				quality={85}
+				className="object-cover object-center"
+			/>
+
+			<div className="absolute inset-0 bg-black/60" />
+
+			<div className="w-full max-w-lg z-10 space-y-8 rounded-xl p-10">
 				<div className="text-center">
-					<h2 className="text-3xl font-bold tracking-tight text-gray-900">
+					<h2 className="text-6xl font-bold tracking-tight text-white">
 						Online Gallery
 					</h2>
-					<p className="mt-2 text-sm text-gray-600">
-						Faça login para gerenciar seus álbuns
+					<p className="mt-2 text-sm text-white">
+						Faça login para guardar e compartilhar fotos e álbuns
 					</p>
 				</div>
 
 				<form className="mt-8 space-y-6" onSubmit={handleLogin}>
 					{error && (
-						<div className="rounded bg-red-50 p-4 text-sm text-red-500">
+						<div className="rounded bg-red-100 p-4 text-sm text-red-500">
 							{error}
 						</div>
 					)}
@@ -58,33 +71,35 @@ export default function LoginPage() {
 						<div>
 							<label
 								htmlFor="email"
-								className="block text-sm font-medium text-gray-700"
+								className="block text-sm font-medium text-white"
 							>
 								Email
 							</label>
 							<input
 								id="email"
 								type="email"
+								autoComplete="email"
 								required
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
-								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-stone-950"
+								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-taupe-50 placeholder-amber-50"
 							/>
 						</div>
 						<div>
 							<label
 								htmlFor="password"
-								className="block text-sm font-medium text-gray-700"
+								className="block text-sm font-medium text-white"
 							>
 								Senha
 							</label>
 							<input
 								id="password"
 								type="password"
+								autoComplete="current-password"
 								required
 								value={senha}
 								onChange={(e) => setSenha(e.target.value)}
-								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-stone-950"
+								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-taupe-50 placeholder-amber-50"
 							/>
 						</div>
 					</div>
@@ -92,10 +107,20 @@ export default function LoginPage() {
 					<button
 						type="submit"
 						disabled={loading}
-						className="flex w-full justify-center rounded-md bg-black px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 disabled:opacity-50"
+						className="flex w-full justify-center rounded-md bg-indigo-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 disabled:opacity-50"
 					>
 						{loading ? "Entrando..." : "Entrar"}
 					</button>
+
+					<p className="mt-2 text-sm text-center text-white">
+						Não possui uma conta?{" "}
+						<a
+							href="/signin"
+							className="text-blue-600 hover:text-indigo-500"
+						>
+							Cadastre-se
+						</a>
+					</p>
 				</form>
 			</div>
 		</div>

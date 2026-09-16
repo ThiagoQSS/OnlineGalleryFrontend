@@ -22,7 +22,9 @@ api.interceptors.response.use(
 		const { status, config } = error.response;
 
 		// Evita loop infinito de redirecionamento se o erro 401/403 acontecer na própria tela de Login
-		const isAuthRoute = config.url?.includes("/auth/login");
+		const isAuthRoute =
+			config.url?.includes("/auth/login") ||
+			config.url?.includes("/auth/register");
 
 		if ((status === 401 || status === 403) && !isAuthRoute) {
 			if (typeof window !== "undefined") {

@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { RowsPhotoAlbum, ColumnsPhotoAlbum, MasonryPhotoAlbum, Photo } from "react-photo-album";
+import {
+	RowsPhotoAlbum,
+	ColumnsPhotoAlbum,
+	MasonryPhotoAlbum,
+	Photo,
+} from "react-photo-album";
 import "react-photo-album/rows.css";
 import "react-photo-album/columns.css";
 import "react-photo-album/masonry.css";
@@ -70,7 +75,12 @@ export default function PhotoGallery({
 
 	const renderCustomPhoto = (
 		props: { onClick?: React.MouseEventHandler },
-		context: { photo: GalleryPhotoItem; index: number; width: number; height: number },
+		context: {
+			photo: GalleryPhotoItem;
+			index: number;
+			width: number;
+			height: number;
+		},
 	) => {
 		const photoItem = context.photo;
 		const raw = photoItem.raw;
@@ -98,7 +108,9 @@ export default function PhotoGallery({
 		return (
 			<div
 				className={`group relative overflow-hidden rounded-2xl bg-surface1/60 border transition-all duration-300 cursor-pointer select-none w-full h-full ${
-					isSelected ? "border-selected-surface2 ring-2 ring-selected-surface2 shadow-lg" : "border-white/5 hover:shadow-xl"
+					isSelected
+						? "border-selected-surface2 ring-2 ring-selected-surface2 shadow-lg"
+						: "border-white/5 hover:shadow-xl"
 				}`}
 				onClick={props.onClick}
 			>
@@ -113,8 +125,16 @@ export default function PhotoGallery({
 						loading="lazy"
 						onLoad={(e) => {
 							const img = e.currentTarget;
-							if (onImageLoad && img.naturalWidth && img.naturalHeight) {
-								onImageLoad(raw.id, img.naturalWidth, img.naturalHeight);
+							if (
+								onImageLoad &&
+								img.naturalWidth &&
+								img.naturalHeight
+							) {
+								onImageLoad(
+									raw.id,
+									img.naturalWidth,
+									img.naturalHeight,
+								);
 							}
 						}}
 						className="object-cover w-full h-full transition-transform duration-500 ease-out group-hover:scale-105"
@@ -134,7 +154,9 @@ export default function PhotoGallery({
 								? "bg-selected-surface2 text-selected-surface opacity-100 shadow-md scale-105"
 								: "bg-black/50 text-white/80 border border-white/20 opacity-0 group-hover:opacity-100 hover:bg-black/70"
 						}`}
-						title={isSelected ? "Desmarcar foto" : "Selecionar foto"}
+						title={
+							isSelected ? "Desmarcar foto" : "Selecionar foto"
+						}
 					>
 						{isSelected ? (
 							<Icon.Check className="w-4 h-4 stroke-[3]" />
@@ -248,15 +270,16 @@ export default function PhotoGallery({
 			photos={albumPhotos}
 			spacing={14}
 			targetRowHeight={(containerWidth) => {
-				if (containerWidth < 600) return 160;
-				if (containerWidth < 1024) return 200;
-				return 240;
+				if (containerWidth < 600) return 220;
+				if (containerWidth < 1024) return 260;
+				return 300;
 			}}
 			rowConstraints={{
 				singleRowMaxHeight: 300,
 			}}
 			onClick={({ index }) => onPhotoClick(index)}
 			render={{ photo: renderCustomPhoto }}
+			componentsProps={{ track: { className: "gap-3" } }}
 		/>
 	);
 }
