@@ -24,16 +24,19 @@ function CreateAlbumContent() {
 			{/* Barra Superior */}
 			<div className="flex items-center gap-3 pb-3 border-b border-surface1/60">
 				<Link
-					href="/albums"
+					href="/albuns"
 					className="p-2 rounded-full hover:bg-surface1 text-foreground2 hover:text-foreground transition-colors"
 					title="Voltar para álbuns"
 				>
 					<Icon.ArrowLeft className="w-5 h-5" />
 				</Link>
 				<div>
-					<h2 className="text-2xl font-bold tracking-tight text-foreground">Novo Álbum</h2>
+					<h2 className="text-2xl font-bold tracking-tight text-foreground">
+						Novo Álbum
+					</h2>
 					<p className="text-xs text-foreground2 mt-0.5">
-						Defina um título e escolha as fotos que farão parte do álbum
+						Defina um título e escolha as fotos que farão parte do
+						álbum
 					</p>
 				</div>
 			</div>
@@ -48,7 +51,10 @@ function CreateAlbumContent() {
 
 			{/* Campo Nome do Álbum */}
 			<div className="flex flex-col gap-2">
-				<label htmlFor="nomeAlbum" className="text-xs font-semibold text-foreground">
+				<label
+					htmlFor="nomeAlbum"
+					className="text-xs font-semibold text-foreground"
+				>
 					Nome do Álbum <span className="text-red-400">*</span>
 				</label>
 				<input
@@ -72,7 +78,8 @@ function CreateAlbumContent() {
 							</span>
 						</h3>
 						<p className="text-[11px] text-foreground2 mt-0.5">
-							A primeira foto selecionada será utilizada como a capa inicial do álbum.
+							A primeira foto selecionada será utilizada como a
+							capa inicial do álbum.
 						</p>
 					</div>
 				</div>
@@ -93,9 +100,12 @@ function CreateAlbumContent() {
 				{!loadingPhotos && userPhotos.length === 0 && (
 					<div className="flex flex-col items-center justify-center p-12 rounded-3xl bg-surface1/40 border border-white/5 text-center">
 						<Icon.ImageIcon className="w-10 h-10 text-foreground2/50 mb-3" />
-						<p className="text-sm font-medium text-foreground">Você ainda não tem fotos na galeria</p>
+						<p className="text-sm font-medium text-foreground">
+							Você ainda não tem fotos na galeria
+						</p>
 						<p className="text-xs text-foreground2 max-w-xs mt-1 mb-4">
-							Faça upload de fotos na aba Fotos antes de criar seu álbum.
+							Faça upload de fotos na aba Fotos antes de criar seu
+							álbum.
 						</p>
 						<Link
 							href="/photos"
@@ -137,12 +147,16 @@ function CreateAlbumContent() {
 												: "bg-black/50 text-white/80 border border-white/20 opacity-0 group-hover:opacity-100"
 										}`}
 									>
-										{isSelected && <Icon.Check className="w-4 h-4 stroke-[3]" />}
+										{isSelected && (
+											<Icon.Check className="w-4 h-4 stroke-[3]" />
+										)}
 									</div>
 
 									{/* Nome da Foto no Rodapé */}
 									<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-										<p className="text-[10px] text-white truncate">{photo.nome}</p>
+										<p className="text-[10px] text-white truncate">
+											{photo.nome}
+										</p>
 									</div>
 								</div>
 							);
@@ -154,7 +168,7 @@ function CreateAlbumContent() {
 			{/* Barra de Ações Inferior */}
 			<div className="flex items-center justify-end gap-3 pt-4 border-t border-surface1/60">
 				<Link
-					href="/albums"
+					href="/albuns"
 					className="px-5 py-2.5 rounded-full text-xs font-semibold hover:bg-surface1 text-foreground2 hover:text-foreground transition-all"
 				>
 					Cancelar
@@ -163,7 +177,9 @@ function CreateAlbumContent() {
 				<button
 					type="button"
 					onClick={createAlbum}
-					disabled={creating || !nome.trim() || selectedPhotoIds.size === 0}
+					disabled={
+						creating || !nome.trim() || selectedPhotoIds.size === 0
+					}
 					className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-md disabled:opacity-50 cursor-pointer"
 				>
 					{creating ? (

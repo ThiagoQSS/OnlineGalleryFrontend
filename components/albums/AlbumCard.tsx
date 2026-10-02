@@ -13,13 +13,19 @@ interface AlbumCardProps {
 	onDelete?: (id: number) => void;
 }
 
-export default function AlbumCard({ album, isShared = false, onDownload, onDelete }: AlbumCardProps) {
+export default function AlbumCard({
+	album,
+	isShared = false,
+	onDownload,
+	onDelete,
+}: AlbumCardProps) {
 	const [imageError, setImageError] = useState(false);
 
 	const getCapaUrl = (url: string | null): string | null => {
 		if (!url) return null;
 		if (url.startsWith("http://") || url.startsWith("https://")) return url;
-		const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+		const baseUrl =
+			process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 		return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 	};
 
@@ -27,7 +33,10 @@ export default function AlbumCard({ album, isShared = false, onDownload, onDelet
 
 	return (
 		<div className="group relative rounded-3xl bg-surface1/60 border border-white/5 overflow-hidden hover:border-white/15 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
-			<Link href={`/albums/${album.id}`} className="block relative w-full aspect-4/3 overflow-hidden bg-surface1">
+			<Link
+				href={`/albuns/${album.id}`}
+				className="block relative w-full aspect-4/3 overflow-hidden bg-surface1"
+			>
 				{resolvedCapaUrl && !imageError ? (
 					<Image
 						src={resolvedCapaUrl}
@@ -38,13 +47,13 @@ export default function AlbumCard({ album, isShared = false, onDownload, onDelet
 						onError={() => setImageError(true)}
 					/>
 				) : (
-					<div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-surface1 to-background2 text-foreground2/50">
+					<div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-surface1 to-background2 text-foreground2/50">
 						<Icon.Album className="w-12 h-12 stroke-1" />
 					</div>
 				)}
 
 				{/* Overlay gradiente no hover */}
-				<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+				<div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
 				{/* Badge Compartilhado ou Próprio */}
 				<div className="absolute top-3 left-3 z-10">
@@ -63,7 +72,7 @@ export default function AlbumCard({ album, isShared = false, onDownload, onDelet
 
 			{/* Rodapé do Card */}
 			<div className="p-4 flex items-center justify-between gap-2">
-				<Link href={`/albums/${album.id}`} className="truncate flex-1">
+				<Link href={`/albuns/${album.id}`} className="truncate flex-1">
 					<h3 className="text-sm font-bold text-foreground truncate hover:text-selected-surface2 transition-colors">
 						{album.nome}
 					</h3>

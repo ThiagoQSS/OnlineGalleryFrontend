@@ -90,7 +90,8 @@ export default function PhotosPage() {
 							</span>
 						</h2>
 						<p className="text-xs text-foreground2 mt-0.5">
-							Galeria adaptativa organizada dinamicamente com react-photo-album
+							Faça upload de suas fotos e as organize em álbuns
+							compartilháveis.
 						</p>
 					</div>
 				</div>
@@ -134,14 +135,16 @@ export default function PhotosPage() {
 						className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all disabled:opacity-50 cursor-pointer"
 						title="Recarregar fotos"
 					>
-						<Icon.RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+						<Icon.RefreshCw
+							className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+						/>
 					</button>
 
 					{/* Modos de Layout */}
 					<div className="flex items-center bg-surface1 p-1 rounded-full gap-0.5">
 						<button
 							onClick={() => setLayoutMode("justified")}
-							title="Justificada (Estilo Google Fotos - Linhas proporcionais)"
+							title="Justificada"
 							className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
 								layoutMode === "justified"
 									? "bg-selected-surface text-selected-surface2 shadow-sm"
@@ -149,7 +152,9 @@ export default function PhotosPage() {
 							}`}
 						>
 							<Icon.Maximize className="w-3.5 h-3.5" />
-							<span className="hidden md:inline">Justificada</span>
+							<span className="hidden md:inline">
+								Justificada
+							</span>
 						</button>
 
 						<button
@@ -218,7 +223,9 @@ export default function PhotosPage() {
 						<Icon.ImageIcon className="w-8 h-8 opacity-70" />
 					</div>
 					<h3 className="text-lg font-semibold text-foreground">
-						{searchQuery ? "Nenhuma foto corresponde à busca" : "Sua galeria está vazia"}
+						{searchQuery
+							? "Nenhuma foto corresponde à busca"
+							: "Sua galeria está vazia"}
 					</h3>
 					<p className="text-sm text-foreground2 max-w-sm mt-1 mb-6">
 						{searchQuery
@@ -276,7 +283,9 @@ export default function PhotosPage() {
 				onDeleteSelected={handleDeleteBatch}
 				onAddToAlbum={() => {
 					// Redireciona para criação de álbum com as fotos já selecionadas
-					router.push(`/albums/novo?selectedPhotos=${Array.from(selectedIds).join(",")}`);
+					router.push(
+						`/albuns/novo?selectedPhotos=${Array.from(selectedIds).join(",")}`,
+					);
 				}}
 			/>
 
@@ -292,7 +301,11 @@ export default function PhotosPage() {
 			{/* Dialog de Confirmação de Exclusão */}
 			<ConfirmDialog
 				isOpen={deleteConfirm.isOpen}
-				title={deleteConfirm.isBatch ? "Excluir fotos selecionadas?" : "Excluir foto?"}
+				title={
+					deleteConfirm.isBatch
+						? "Excluir fotos selecionadas?"
+						: "Excluir foto?"
+				}
 				message={
 					deleteConfirm.isBatch
 						? `Tem certeza que deseja excluir permanentemente ${selectedIds.size} foto(s)? Esta ação não poderá ser desfeita.`

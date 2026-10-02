@@ -2,51 +2,48 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArquivoResponseDTO } from "@/types/api";
+import { ArquivoResponseDTO, AlbumResumoDTO } from "@/types/api";
 import { photoService } from "@/services/photoService";
 import { albumService } from "@/services/albumService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useCreateAlbum() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const queryClient = useQueryClient();
 
 	const [nome, setNome] = useState("");
-	const [userPhotos, setUserPhotos] = useState<ArquivoResponseDTO[]>([]);
-	const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
-	const [loadingPhotos, setLoadingPhotos] = useState(true);
-	const [creating, setCreating] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(
+		new Set(),
+	);
+	const [localError, setLocalError] = useState<string | null>(null);
 
-	// Carrega fotos do usuário e aplica pré-seleção se vier na query string
+	// Carrega fotos do usuário utilizando o React Query (reaproveitando o cache de photos)
+	const {
+		data: userPhotos = [],
+		isLoading: loadingPhotos,
+		error: queryError,
+	} = useQuery<ArquivoResponseDTO[]>({
+		queryKey: ["photos"],
+		queryFn: async () => {
+			const data = await photoService.getPhotos();
+			return Array.isArray(data) ? data : [];
+		},
+		staleTime: 8 * 60 * 1000,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+	});
+
+	// Aplica pré-seleção se vier na query string
 	useEffect(() => {
-		let isMounted = true;
-		photoService
-			.getPhotos()
-			.then((photos) => {
-				if (!isMounted) return;
-				setUserPhotos(Array.isArray(photos) ? photos : []);
-
-				const preSelected = searchParams.get("selectedPhotos");
-				if (preSelected) {
-					const ids = preSelected
-						.split(",")
-						.map((id) => Number(id.trim()))
-						.filter((id) => !isNaN(id));
-					setSelectedPhotoIds(new Set(ids));
-				}
-				setLoadingPhotos(false);
-			})
-			.catch((err) => {
-				if (isMounted) {
-					console.error("Erro ao carregar fotos:", err);
-					setError("Não foi possível carregar as fotos para seleção.");
-					setLoadingPhotos(false);
-				}
-			});
-
-		return () => {
-			isMounted = false;
-		};
+		const preSelected = searchParams.get("selectedPhotos");
+		if (preSelected) {
+			const ids = preSelected
+				.split(",")
+				.map((id) => Number(id.trim()))
+				.filter((id) => !isNaN(id));
+			setSelectedPhotoIds(new Set(ids));
+		}
 	}, [searchParams]);
 
 	const togglePhoto = useCallback((id: number) => {
@@ -61,32 +58,46 @@ export function useCreateAlbum() {
 		});
 	}, []);
 
+	const createAlbumMutation = useMutation({
+		mutationFn: async () => {
+			const idsArray = Array.from(selectedPhotoIds);
+			return await albumService.createAlbum(nome.trim(), idsArray);
+		},
+		onSuccess: (newAlbum) => {
+			// Adiciona o novo álbum ao cache local da listagem de "meus álbuns"
+			queryClient.setQueryData<AlbumResumoDTO[]>(
+				["albums", "my"],
+				(prev = []) => {
+					return [newAlbum, ...prev];
+				},
+			);
+			router.push(`/albuns/${newAlbum.id}`);
+		},
+		onError: (err: any) => {
+			console.error("Erro ao criar álbum:", err);
+			setLocalError(
+				err.response?.data?.error ||
+					"Erro ao criar álbum. Tente novamente.",
+			);
+		},
+	});
+
 	const createAlbum = useCallback(async () => {
 		if (!nome.trim()) {
-			setError("Por favor, digite um nome para o álbum.");
+			setLocalError("Por favor, digite um nome para o álbum.");
 			return;
 		}
 
 		if (selectedPhotoIds.size === 0) {
-			setError("Selecione pelo menos uma foto para compor o álbum.");
+			setLocalError("Selecione pelo menos uma foto para compor o álbum.");
 			return;
 		}
 
-		setCreating(true);
-		setError(null);
+		setLocalError(null);
+		await createAlbumMutation.mutateAsync();
+	}, [nome, selectedPhotoIds, createAlbumMutation]);
 
-		try {
-			const idsArray = Array.from(selectedPhotoIds);
-			const newAlbum = await albumService.createAlbum(nome.trim(), idsArray);
-			router.push(`/albums/${newAlbum.id}`);
-		} catch (err: unknown) {
-			console.error("Erro ao criar álbum:", err);
-			const error = err as { response?: { data?: { error?: string } } };
-			setError(error.response?.data?.error || "Erro ao criar álbum. Tente novamente.");
-		} finally {
-			setCreating(false);
-		}
-	}, [nome, selectedPhotoIds, router]);
+	const error = localError || (queryError ? "Não foi possível carregar as fotos para seleção." : null);
 
 	return {
 		nome,
@@ -94,7 +105,7 @@ export function useCreateAlbum() {
 		userPhotos,
 		selectedPhotoIds,
 		loadingPhotos,
-		creating,
+		creating: createAlbumMutation.isPending,
 		error,
 		togglePhoto,
 		createAlbum,

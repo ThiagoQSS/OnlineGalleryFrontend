@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { api } from "@/services/api";
 import { AxiosError } from "axios";
-import bgImage from "@/assets/collage.jpg";
+import bgImage from "@/assets/gemini_image.jpg";
 
 export default function RegisterPage() {
 	const [nome, setNome] = useState("");
@@ -68,7 +68,7 @@ export default function RegisterPage() {
 				alt="Background Online Gallery"
 				fill
 				priority
-				quality={85}
+				quality={100}
 				className="object-cover object-center"
 			/>
 
@@ -112,7 +112,7 @@ export default function RegisterPage() {
 							required
 							value={nome}
 							onChange={(e) => setNome(e.target.value)}
-							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-gray-500 focus:outline-none"
+							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-blue-300 focus:outline-none"
 						/>
 					</div>
 
@@ -130,7 +130,7 @@ export default function RegisterPage() {
 							required
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-gray-500 focus:outline-none"
+							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-blue-300 focus:outline-none"
 						/>
 					</div>
 
@@ -148,7 +148,7 @@ export default function RegisterPage() {
 							required
 							value={senha}
 							onChange={(e) => setSenha(e.target.value)}
-							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-gray-500 focus:outline-none"
+							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-blue-300 focus:outline-none"
 						/>
 					</div>
 
@@ -166,7 +166,7 @@ export default function RegisterPage() {
 							required
 							value={confirmarSenha}
 							onChange={(e) => setConfirmarSenha(e.target.value)}
-							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-gray-500 focus:outline-none"
+							className="mt-1 block w-full rounded-md border border-gray-300 p-2 text-white focus:border-blue-300 focus:outline-none"
 						/>
 					</div>
 

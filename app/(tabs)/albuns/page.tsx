@@ -14,6 +14,8 @@ export default function AlbumsPage() {
 		myAlbums,
 		sharedAlbums,
 		filteredAlbums,
+		filteredMyAlbums,
+		filteredSharedAlbums,
 		loading,
 		error,
 		searchQuery,
@@ -52,7 +54,8 @@ export default function AlbumsPage() {
 							</span>
 						</h2>
 						<p className="text-xs text-foreground2 mt-0.5">
-							Organize momentos especiais e colabore com outras pessoas
+							Organize momentos especiais e colabore com outras
+							pessoas
 						</p>
 					</div>
 				</div>
@@ -81,7 +84,7 @@ export default function AlbumsPage() {
 
 					{/* Botão Novo Álbum */}
 					<Link
-						href="/albums/novo"
+						href="/albuns/novo"
 						className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-sm cursor-pointer"
 					>
 						<Icon.FolderPlus className="w-4 h-4" />
@@ -95,13 +98,33 @@ export default function AlbumsPage() {
 						className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all disabled:opacity-50 cursor-pointer"
 						title="Recarregar álbuns"
 					>
-						<Icon.RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+						<Icon.RefreshCw
+							className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+						/>
 					</button>
 				</div>
 			</div>
 
-			{/* Abas: Meus Álbuns / Compartilhados */}
-			<div className="flex items-center gap-2 border-b border-surface1/40 pb-2">
+			{/* Abas: Todos / Meus Álbuns / Compartilhados */}
+			<div
+				className={`flex items-center gap-2 ${activeTab !== "all" && "border-b border-surface1/40 pb-2"}`}
+			>
+				<button
+					type="button"
+					onClick={() => setActiveTab("all")}
+					className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+						activeTab === "all"
+							? "bg-selected-surface text-selected-surface2 shadow-sm"
+							: "text-foreground2 hover:text-foreground hover:bg-surface1"
+					}`}
+				>
+					<Icon.LayoutGrid className="w-3.5 h-3.5" />
+					<span>Todos</span>
+					<span className="text-[10px] px-2 py-0.5 rounded-full bg-surface1 text-foreground2">
+						{myAlbums.length + sharedAlbums.length}
+					</span>
+				</button>
+
 				<button
 					type="button"
 					onClick={() => setActiveTab("my")}
@@ -176,40 +199,95 @@ export default function AlbumsPage() {
 							? "Nenhum álbum encontrado para a busca"
 							: activeTab === "my"
 								? "Você ainda não criou nenhum álbum"
-								: "Nenhum álbum compartilhado com você"}
+								: activeTab === "shared"
+									? "Nenhum álbum compartilhado com você"
+									: "Nenhum álbum encontrado"}
 					</h3>
 					<p className="text-sm text-foreground2 max-w-sm mt-1 mb-6">
 						{searchQuery
 							? `Não encontramos álbuns com o termo "${searchQuery}". Tente outro nome.`
 							: activeTab === "my"
 								? "Crie seu primeiro álbum selecionando fotos da sua galeria."
-								: "Quando alguém convidar você para colaborar em um álbum, ele aparecerá aqui."}
+								: activeTab === "shared"
+									? "Quando alguém convidar você para colaborar em um álbum, ele aparecerá aqui."
+									: "Você ainda não tem álbuns e não foi convidado para nenhum."}
 					</p>
 
-					{activeTab === "my" && !searchQuery && (
-						<Link
-							href="/albums/novo"
-							className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-sm"
-						>
-							<Icon.FolderPlus className="w-4 h-4" />
-							Criar novo álbum
-						</Link>
-					)}
+					{(activeTab === "my" || activeTab === "all") &&
+						!searchQuery && (
+							<Link
+								href="/albuns/novo"
+								className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-sm"
+							>
+								<Icon.FolderPlus className="w-4 h-4" />
+								Criar novo álbum
+							</Link>
+						)}
 				</div>
 			)}
 
 			{/* Grid de Álbuns */}
 			{!loading && filteredAlbums.length > 0 && (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-					{filteredAlbums.map((album) => (
-						<AlbumCard
-							key={album.id}
-							album={album}
-							isShared={activeTab === "shared"}
-							onDownload={downloadAlbum}
-							onDelete={(id) => setDeleteAlbumId(id)}
-						/>
-					))}
+				<div className="flex flex-col gap-8">
+					{activeTab === "all" ? (
+						<>
+							{/* Meus Álbuns Section */}
+							{filteredMyAlbums.length > 0 && (
+								<div className="flex flex-col gap-4">
+									<h3 className="text-lg font-semibold text-foreground border-b border-surface1/40 pb-2">
+										Meus Álbuns
+									</h3>
+									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+										{filteredMyAlbums.map((album) => (
+											<AlbumCard
+												key={album.id}
+												album={album}
+												isShared={false}
+												onDownload={downloadAlbum}
+												onDelete={(id) =>
+													setDeleteAlbumId(id)
+												}
+											/>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Compartilhados Section */}
+							{filteredSharedAlbums.length > 0 && (
+								<div className="flex flex-col gap-4">
+									<h3 className="text-lg font-semibold text-foreground border-b border-surface1/40 pb-2">
+										Compartilhados Comigo
+									</h3>
+									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+										{filteredSharedAlbums.map((album) => (
+											<AlbumCard
+												key={album.id}
+												album={album}
+												isShared={true}
+												onDownload={downloadAlbum}
+												onDelete={(id) =>
+													setDeleteAlbumId(id)
+												}
+											/>
+										))}
+									</div>
+								</div>
+							)}
+						</>
+					) : (
+						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+							{filteredAlbums.map((album) => (
+								<AlbumCard
+									key={album.id}
+									album={album}
+									isShared={activeTab === "shared"}
+									onDownload={downloadAlbum}
+									onDelete={(id) => setDeleteAlbumId(id)}
+								/>
+							))}
+						</div>
+					)}
 				</div>
 			)}
 

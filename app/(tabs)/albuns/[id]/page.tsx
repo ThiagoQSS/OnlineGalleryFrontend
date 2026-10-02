@@ -41,7 +41,7 @@ export default function AlbumDetailsPage() {
 		kickCollaborator,
 	} = useAlbumDetails(albumId);
 
-	const [layoutMode, setLayoutMode] = useState<LayoutMode>("justified");
+	const [layoutMode, setLayoutMode] = useState<LayoutMode>("masonry");
 	const [isAddPhotosOpen, setIsAddPhotosOpen] = useState(false);
 	const [isCollaboratorsOpen, setIsCollaboratorsOpen] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -109,7 +109,7 @@ export default function AlbumDetailsPage() {
 						"O álbum solicitado não existe ou você não possui permissão para acessá-lo."}
 				</p>
 				<Link
-					href="/albums"
+					href="/albuns"
 					className="px-5 py-2.5 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground text-xs font-semibold transition-all"
 				>
 					Voltar para todos os álbuns
@@ -121,11 +121,11 @@ export default function AlbumDetailsPage() {
 	return (
 		<div className="w-full flex flex-col gap-6 relative">
 			{/* Barra Superior e Cabeçalho do Álbum */}
-			<div className="flex flex-col gap-4 pb-4 border-b border-surface1/60">
+			<div className="flex flex-col gap-4 pb-2 border-b border-surface1/60">
 				<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<div className="flex items-center gap-3">
 						<Link
-							href="/albums"
+							href="/albuns"
 							className="p-2 rounded-full hover:bg-surface1 text-foreground2 hover:text-foreground transition-colors"
 							title="Voltar para álbuns"
 						>
@@ -160,121 +160,122 @@ export default function AlbumDetailsPage() {
 						</div>
 					</div>
 
-					{/* Botões de Ação */}
-					<div className="flex flex-wrap items-center gap-2">
-						{/* Adicionar Fotos */}
-						<button
-							type="button"
-							onClick={() => setIsAddPhotosOpen(true)}
-							className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-sm cursor-pointer"
-						>
-							<Icon.Plus className="w-4 h-4" />
-							<span>Adicionar Fotos</span>
-						</button>
-
-						{/* Colaboradores */}
-						<button
-							type="button"
-							onClick={() => setIsCollaboratorsOpen(true)}
-							className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface1 hover:bg-white/10 text-foreground text-xs font-semibold border border-white/10 transition-all cursor-pointer"
-						>
-							<Icon.Users className="w-4 h-4 text-foreground2" />
-							<span>
-								Colaboradores ({1 + album.convidados.length})
-							</span>
-						</button>
-
-						{/* Baixar Álbum ZIP */}
-						<button
-							type="button"
-							onClick={downloadAlbum}
-							disabled={album.images.length === 0}
-							className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all disabled:opacity-50 cursor-pointer"
-							title="Baixar álbum completo (.zip)"
-						>
-							<Icon.Download className="w-4 h-4" />
-						</button>
-
-						{/* Recarregar */}
-						<button
-							type="button"
-							onClick={fetchAlbum}
-							className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all cursor-pointer"
-							title="Atualizar dados do álbum"
-						>
-							<Icon.RefreshCw className="w-4 h-4" />
-						</button>
-
-						{/* Excluir Álbum (somente criador) */}
-						{isCreator && (
+					<div className="flex flex-col md:flex-row items-center justify-between gap-3">
+						{/* Botões de Ação */}
+						<div className="flex flex-wrap items-center gap-2">
+							{/* Adicionar Fotos */}
 							<button
 								type="button"
-								onClick={() =>
-									setDeleteConfirm({
-										isOpen: true,
-										type: "album",
-									})
-								}
-								className="p-2 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-400 transition-all cursor-pointer"
-								title="Excluir este álbum"
+								onClick={() => setIsAddPhotosOpen(true)}
+								className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-selected-surface text-selected-surface2 text-xs font-semibold hover:opacity-90 transition-all shadow-sm cursor-pointer"
 							>
-								<Icon.Trash2 className="w-4 h-4" />
+								<Icon.Plus className="w-4 h-4" />
+								<span>Adicionar Fotos</span>
 							</button>
+
+							{/* Colaboradores */}
+							<button
+								type="button"
+								onClick={() => setIsCollaboratorsOpen(true)}
+								className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface1 hover:bg-white/10 text-foreground text-xs font-semibold border border-white/10 transition-all cursor-pointer"
+							>
+								<Icon.Users className="w-4 h-4 text-foreground2" />
+								<span>
+									Colaboradores ({1 + album.convidados.length}
+									)
+								</span>
+							</button>
+
+							{/* Baixar Álbum ZIP */}
+							<button
+								type="button"
+								onClick={downloadAlbum}
+								disabled={album.images.length === 0}
+								className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all disabled:opacity-50 cursor-pointer"
+								title="Baixar álbum completo (.zip)"
+							>
+								<Icon.Download className="w-4 h-4" />
+							</button>
+
+							{/* Recarregar */}
+							<button
+								type="button"
+								onClick={() => fetchAlbum()}
+								className="p-2 rounded-full bg-surface1 hover:bg-surface1/80 text-foreground2 hover:text-foreground transition-all cursor-pointer"
+								title="Atualizar dados do álbum"
+							>
+								<Icon.RefreshCw className="w-4 h-4" />
+							</button>
+
+							{/* Excluir Álbum (somente criador) */}
+							{isCreator && (
+								<button
+									type="button"
+									onClick={() =>
+										setDeleteConfirm({
+											isOpen: true,
+											type: "album",
+										})
+									}
+									className="p-2 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-400 transition-all cursor-pointer"
+									title="Excluir este álbum"
+								>
+									<Icon.Trash2 className="w-4 h-4" />
+								</button>
+							)}
+						</div>
+
+						{/* Seletor de layout */}
+						{album.images.length > 0 && (
+							<div className="flex items-center bg-surface1 p-1 rounded-full gap-0.5">
+								<button
+									onClick={() => setLayoutMode("justified")}
+									title="Justificada"
+									className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+										layoutMode === "justified"
+											? "bg-selected-surface text-selected-surface2 shadow-sm"
+											: "text-foreground2 hover:text-foreground"
+									}`}
+								>
+									<Icon.Maximize className="w-3.5 h-3.5" />
+									<span className="hidden sm:inline">
+										Justificada
+									</span>
+								</button>
+
+								<button
+									onClick={() => setLayoutMode("columns")}
+									title="Colunas"
+									className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+										layoutMode === "columns"
+											? "bg-selected-surface text-selected-surface2 shadow-sm"
+											: "text-foreground2 hover:text-foreground"
+									}`}
+								>
+									<Icon.Columns3 className="w-3.5 h-3.5" />
+									<span className="hidden sm:inline">
+										Colunas
+									</span>
+								</button>
+
+								<button
+									onClick={() => setLayoutMode("masonry")}
+									title="Masonry"
+									className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+										layoutMode === "masonry"
+											? "bg-selected-surface text-selected-surface2 shadow-sm"
+											: "text-foreground2 hover:text-foreground"
+									}`}
+								>
+									<Icon.LayoutGrid className="w-3.5 h-3.5" />
+									<span className="hidden sm:inline">
+										Masonry
+									</span>
+								</button>
+							</div>
 						)}
 					</div>
 				</div>
-
-				{/* Seletor de layout */}
-				{album.images.length > 0 && (
-					<div className="flex items-center justify-end">
-						<div className="flex items-center bg-surface1 p-1 rounded-full gap-0.5">
-							<button
-								onClick={() => setLayoutMode("justified")}
-								title="Justificada"
-								className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-									layoutMode === "justified"
-										? "bg-selected-surface text-selected-surface2 shadow-sm"
-										: "text-foreground2 hover:text-foreground"
-								}`}
-							>
-								<Icon.Maximize className="w-3 h-3" />
-								<span className="hidden sm:inline">
-									Justificada
-								</span>
-							</button>
-
-							<button
-								onClick={() => setLayoutMode("columns")}
-								title="Colunas"
-								className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-									layoutMode === "columns"
-										? "bg-selected-surface text-selected-surface2 shadow-sm"
-										: "text-foreground2 hover:text-foreground"
-								}`}
-							>
-								<Icon.Columns3 className="w-3 h-3" />
-								<span className="hidden sm:inline">
-									Colunas
-								</span>
-							</button>
-
-							<button
-								onClick={() => setLayoutMode("masonry")}
-								title="Masonry"
-								className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-									layoutMode === "masonry"
-										? "bg-selected-surface text-selected-surface2 shadow-sm"
-										: "text-foreground2 hover:text-foreground"
-								}`}
-							>
-								<Icon.LayoutGrid className="w-3 h-3" />
-								<span className="hidden sm:inline">
-									Masonry
-								</span>
-							</button>
-						</div>
-					</div>
-				)}
 			</div>
 
 			{/* Estado Vazio de Fotos */}

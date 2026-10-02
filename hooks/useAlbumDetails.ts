@@ -2,85 +2,77 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlbumDetalhadoDTO } from "@/types/api";
+import { AlbumDetalhadoDTO, AlbumResumoDTO } from "@/types/api";
 import { albumService } from "@/services/albumService";
 import { PhotoMeta } from "@/hooks/usePhotos";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 export function useAlbumDetails(albumId: number) {
 	const router = useRouter();
-	const [album, setAlbum] = useState<AlbumDetalhadoDTO | null>(null);
-	const [loading, setLoading] = useState<boolean>(true);
-	const [error, setError] = useState<string | null>(null);
-	const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-	const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
+	const queryClient = useQueryClient();
+
+	const {
+		data: album = null,
+		isLoading: loading,
+		error: queryError,
+		refetch,
+	} = useQuery<AlbumDetalhadoDTO | null>({
+		queryKey: ["albumDetails", albumId],
+		queryFn: async () => {
+			if (isNaN(albumId)) return null;
+			return await albumService.getAlbumDetails(albumId);
+		},
+		enabled: !isNaN(albumId),
+		staleTime: 8 * 60 * 1000,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+	});
+
+	const fetchAlbum = useCallback(async () => {
+		await refetch();
+	}, [refetch]);
+
+	const error = queryError
+		? (queryError as any).response?.data?.error ||
+		  "Álbum não encontrado ou sem permissão de acesso."
+		: null;
+
+	const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
+		null,
+	);
+	const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(
+		new Set(),
+	);
 	const [metaMap, setMetaMap] = useState<Record<number, PhotoMeta>>({});
 
-	// Carrega dados do álbum
-	const fetchAlbum = useCallback(async () => {
-		if (isNaN(albumId)) return;
-		setLoading(true);
-		setError(null);
-		try {
-			const data = await albumService.getAlbumDetails(albumId);
-			setAlbum(data);
-		} catch (err: unknown) {
-			console.error("Erro ao buscar detalhes do álbum:", err);
-			const errorObj = err as { response?: { data?: { error?: string } } };
-			setError(errorObj.response?.data?.error || "Álbum não encontrado ou sem permissão de acesso.");
-		} finally {
-			setLoading(false);
-		}
-	}, [albumId]);
-
-	useEffect(() => {
-		if (isNaN(albumId)) return;
-		let isMounted = true;
-		albumService
-			.getAlbumDetails(albumId)
-			.then((data) => {
-				if (isMounted) {
-					setAlbum(data);
-					setLoading(false);
-				}
-			})
-			.catch((err) => {
-				if (isMounted) {
-					console.error("Erro ao buscar detalhes do álbum:", err);
-					const errorObj = err as { response?: { data?: { error?: string } } };
-					setError(errorObj.response?.data?.error || "Álbum não encontrado ou sem permissão de acesso.");
-					setLoading(false);
-				}
-			});
-
-		return () => {
-			isMounted = false;
-		};
-	}, [albumId]);
-
 	// Atualiza dimensões das fotos do álbum
-	const updatePhotoDimensions = useCallback((id: number, width: number, height: number) => {
-		const safeWidth = width > 0 ? width : 1200;
-		const safeHeight = height > 0 ? height : 800;
-		const ratio = safeWidth / safeHeight;
+	const updatePhotoDimensions = useCallback(
+		(id: number, width: number, height: number) => {
+			const safeWidth = width > 0 ? width : 1200;
+			const safeHeight = height > 0 ? height : 800;
+			const ratio = safeWidth / safeHeight;
 
-		let orientation: "panorama" | "landscape" | "square" | "portrait" = "landscape";
-		if (ratio >= 1.75) orientation = "panorama";
-		else if (ratio >= 1.15) orientation = "landscape";
-		else if (ratio >= 0.85) orientation = "square";
-		else orientation = "portrait";
+			let orientation: "panorama" | "landscape" | "square" | "portrait" =
+				"landscape";
+			if (ratio >= 1.75) orientation = "panorama";
+			else if (ratio >= 1.15) orientation = "landscape";
+			else if (ratio >= 0.85) orientation = "square";
+			else orientation = "portrait";
 
-		setMetaMap((prev) => ({
-			...prev,
-			[id]: {
-				width: safeWidth,
-				height: safeHeight,
-				ratio,
-				orientation,
-				isLoaded: true,
-				hasError: false,
-			},
-		}));
-	}, []);
+			setMetaMap((prev) => ({
+				...prev,
+				[id]: {
+					width: safeWidth,
+					height: safeHeight,
+					ratio,
+					orientation,
+					isLoaded: true,
+					hasError: false,
+				},
+			}));
+		},
+		[],
+	);
 
 	// Preload dimensions
 	useEffect(() => {
@@ -92,7 +84,11 @@ export function useAlbumDetails(albumId: number) {
 			const img = new window.Image();
 			img.src = photo.url;
 			img.onload = () => {
-				updatePhotoDimensions(photo.id, img.naturalWidth, img.naturalHeight);
+				updatePhotoDimensions(
+					photo.id,
+					img.naturalWidth,
+					img.naturalHeight,
+				);
 			};
 		});
 	}, [album?.images, metaMap, updatePhotoDimensions]);
@@ -136,11 +132,16 @@ export function useAlbumDetails(albumId: number) {
 		async (imageId: number) => {
 			try {
 				await albumService.removePhotoFromAlbum(albumId, imageId);
-				setAlbum((prev) => {
-					if (!prev) return prev;
-					const updated = prev.images.filter((img) => img.id !== imageId);
-					return { ...prev, images: updated };
-				});
+				queryClient.setQueryData<AlbumDetalhadoDTO | null>(
+					["albumDetails", albumId],
+					(prev) => {
+						if (!prev) return prev;
+						return {
+							...prev,
+							images: prev.images.filter((img) => img.id !== imageId),
+						};
+					},
+				);
 				setSelectedPhotoIds((prev) => {
 					const next = new Set(prev);
 					next.delete(imageId);
@@ -151,7 +152,7 @@ export function useAlbumDetails(albumId: number) {
 				throw err;
 			}
 		},
-		[albumId],
+		[albumId, queryClient],
 	);
 
 	// Remover fotos selecionadas em lote do álbum
@@ -160,28 +161,47 @@ export function useAlbumDetails(albumId: number) {
 		const idsArray = Array.from(selectedPhotoIds);
 		try {
 			await albumService.removePhotosBatchFromAlbum(albumId, idsArray);
-			setAlbum((prev) => {
-				if (!prev) return prev;
-				const updated = prev.images.filter((img) => !selectedPhotoIds.has(img.id));
-				return { ...prev, images: updated };
-			});
+			queryClient.setQueryData<AlbumDetalhadoDTO | null>(
+				["albumDetails", albumId],
+				(prev) => {
+					if (!prev) return prev;
+					return {
+						...prev,
+						images: prev.images.filter((img) => !selectedPhotoIds.has(img.id)),
+					};
+				},
+			);
 			clearPhotoSelection();
 		} catch (err) {
 			console.error("Erro ao remover fotos em lote do álbum:", err);
 			throw err;
 		}
-	}, [albumId, selectedPhotoIds, clearPhotoSelection]);
+	}, [albumId, selectedPhotoIds, clearPhotoSelection, queryClient]);
+
+	const deleteAlbumMutation = useMutation({
+		mutationFn: async () => {
+			await albumService.deleteAlbum(albumId);
+		},
+		onSuccess: () => {
+			queryClient.setQueryData<AlbumResumoDTO[]>(
+				["albums", "my"],
+				(prev = []) => prev.filter((a) => a.id !== albumId),
+			);
+			queryClient.setQueryData<AlbumResumoDTO[]>(
+				["albums", "shared"],
+				(prev = []) => prev.filter((a) => a.id !== albumId),
+			);
+			router.push("/albuns");
+		},
+		onError: (err) => {
+			console.error("Erro ao excluir álbum:", err);
+		},
+	});
 
 	// Deletar o álbum
 	const deleteAlbum = useCallback(async () => {
-		try {
-			await albumService.deleteAlbum(albumId);
-			router.push("/albums");
-		} catch (err) {
-			console.error("Erro ao excluir álbum:", err);
-			throw err;
-		}
-	}, [albumId, router]);
+		await deleteAlbumMutation.mutateAsync();
+	}, [deleteAlbumMutation]);
 
 	// Baixar zip do álbum
 	const downloadAlbum = useCallback(async () => {
@@ -199,13 +219,29 @@ export function useAlbumDetails(albumId: number) {
 		async (email: string) => {
 			try {
 				await albumService.inviteCollaborator(albumId, email);
-				await fetchAlbum();
+				queryClient.setQueryData<AlbumDetalhadoDTO | null>(
+					["albumDetails", albumId],
+					(prev) => {
+						if (!prev) return prev;
+						// Optimistic UI update or wait for refetch? We do an optimistic update here
+						const novoConvidado = {
+							id: Date.now(),
+							email,
+							nome: email.split("@")[0],
+							dataNascimento: null,
+						};
+						return {
+							...prev,
+							convidados: [...prev.convidados, novoConvidado],
+						};
+					},
+				);
 			} catch (err) {
-				console.error("Erro ao convidar colaborador:", err);
+				console.log("Erro ao convidar colaborador:", err);
 				throw err;
 			}
 		},
-		[albumId, fetchAlbum],
+		[albumId, queryClient],
 	);
 
 	// Remover colaborador
@@ -213,13 +249,22 @@ export function useAlbumDetails(albumId: number) {
 		async (email: string) => {
 			try {
 				await albumService.kickCollaborator(albumId, email);
-				await fetchAlbum();
+				queryClient.setQueryData<AlbumDetalhadoDTO | null>(
+					["albumDetails", albumId],
+					(prev) => {
+						if (!prev) return prev;
+						return {
+							...prev,
+							convidados: prev.convidados.filter((c) => c.email !== email),
+						};
+					},
+				);
 			} catch (err) {
 				console.error("Erro ao remover colaborador:", err);
 				throw err;
 			}
 		},
-		[albumId, fetchAlbum],
+		[albumId, queryClient],
 	);
 
 	return {

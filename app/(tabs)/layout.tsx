@@ -18,17 +18,33 @@ export default function TabsLayout({
 			<header className="p-4 w-full flex flex-row justify-between">
 				<h1 className="text-3xl">Online Gallery</h1>
 
-				<div
-					className="flex rounded-full bg-surface1 p-2 aspect-square w-10 h-10 items-center justify-center"
-					onClick={() => setUserModalOpen((prev) => !prev)}
-				>
-					<Icon.User />
-				</div>
+				<div className="relative">
+					<div
+						className="flex rounded-full bg-surface1 p-2 aspect-square w-10 h-10 items-center justify-center"
+						onClick={() => setUserModalOpen((prev) => !prev)}
+					>
+						<Icon.User />
+					</div>
 
-				<UserMenu
-					visible={userModalOpen}
-					setVisible={setUserModalOpen}
-				/>
+					{userModalOpen && (
+						<div className="fixed inset-0 z-50 flex justify-end p-2">
+							<div
+								className="fixed inset-0 bg-black/40 transition-opacity"
+								onClickCapture={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									setUserModalOpen(false);
+								}}
+							/>
+							<div className="relative right-12 top-0 mr-2 z-50 min-w-50">
+								<UserMenu
+									visible={userModalOpen}
+									setVisible={setUserModalOpen}
+								/>
+							</div>
+						</div>
+					)}
+				</div>
 			</header>
 
 			<div className="flex flex-1">
@@ -38,7 +54,7 @@ export default function TabsLayout({
 							<Icon.ImageIcon /> Photos
 						</SideNavigationCard>
 
-						<SideNavigationCard href="/albums">
+						<SideNavigationCard href="/albuns">
 							<Icon.Album /> Albums
 						</SideNavigationCard>
 

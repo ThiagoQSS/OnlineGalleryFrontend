@@ -1,66 +1,66 @@
-# Guia de Integração Frontend com a API (File Management Microservice)
+# Frontend Integration Guide with the API (File Management Microservice)
 
-Este documento serve como especificação técnica detalhada para o desenvolvimento e integração do **Front-end** com o microsserviço de **Gerenciamento de Arquivos e Álbuns** (`file-management-ms`) da plataforma **OnlineGallery**.
+This document serves as a detailed technical specification for the development and integration of the **Front-end** with the **File and Album Management** microservice (`file-management-ms`) of the **OnlineGallery** platform.
 
 ---
 
-## 1. Visão Geral da Arquitetura
+## 1. Architecture Overview
 
-O microsserviço atua como o ponto de entrada principal (BFF - Backend for Frontend) para o gerenciamento de mídias, álbuns e controle de usuários da galeria.
+The microservice acts as the main entry point (BFF - Backend for Frontend) for managing media, albums, and user control of the gallery.
 
 ```
 ┌─────────────────┐       HTTP / REST (JWT / Cookie)      ┌─────────────────────────────┐
 │                 ├──────────────────────────────────────►│     file-management-ms      │
 │  Front-end App  │◄──────────────────────────────────────┤  (Spring Boot / Java 21)    │
-│  (React/Vue/etc)│       Presigned URL Direta (GET)      └────────┬───────────────┬────┘
+│  (React/Vue/etc)│       Direct Presigned URL (GET)      └────────┬───────────────┬────┘
 │                 ├───────────────────────────────────┐            │               │
 └─────────────────┘                                   ▼            ▼               ▼
                                                 ┌───────────┐┌───────────┐ ┌───────────────┐
                                                 │  MinIO /  ││ PostgreSQL│ │   RabbitMQ    │
-                                                │  AWS S3   ││  Database │ │ (Disparo de   │
-                                                └───────────┘└───────────┘ │  e-mails ms)  │
+                                                │  AWS S3   ││  Database │ │ (E-mail       │
+                                                └───────────┘└───────────┘ │  sending ms)  │
                                                                            └───────────────┘
 ```
 
-### Princípios Chave de Integração:
-1. **Consumo de Imagens via Presigned URLs**: As respostas da API fornecem URLs pré-assinadas geradas via AWS SDK (apontando para MinIO em desenvolvimento ou S3 em produção). O front-end pode utilizar essas URLs diretamente em tags `<img>` ou links de download sem precisar enviar cabeçalhos de autenticação.
-2. **Delegação Assíncrona de E-mails**: Ações como cadastro de usuário e convites para álbuns disparam eventos via RabbitMQ de forma assíncrona. O front-end não precisa orquestrar o envio de e-mails nem esperar respostas de servidores SMTP.
-3. **Download Direto ou Compactado**: O backend possui endpoints dedicados para download individual ou compactação em lote (`.zip`) de imagens e álbuns inteiros.
-4. **Página de Convite**: O e-mail de convite direciona o convidado para `${FRONTEND_URL}/albuns/convite?token=<uuid>`. O front-end deve capturar esse token na query param para renderizar as informações e a capa pública do álbum.
+### Key Integration Principles:
+1. **Image Consumption via Presigned URLs**: The API responses provide presigned URLs generated via the AWS SDK (pointing to MinIO in development or S3 in production). The front-end can use these URLs directly in `<img>` tags or download links without needing to send authentication headers.
+2. **Asynchronous E-mail Delegation**: Actions such as user registration and album invitations trigger events via RabbitMQ asynchronously. The front-end does not need to orchestrate e-mail sending or wait for SMTP server responses.
+3. **Direct or Compressed Download**: The backend has dedicated endpoints for individual download or batch compression (`.zip`) of images and entire albums.
+4. **Invitation Page**: The invitation e-mail directs the guest to `${FRONTEND_URL}/albuns/convite?token=<uuid>`. The front-end must capture this token in the query param to render the information and the public album cover.
 
 ---
 
-## 2. Autenticação e Segurança
+## 2. Authentication and Security
 
-A API adota autenticação **Stateless baseada em JWT**, oferecendo suporte a dois modos de envio do token (o front-end pode usar o que for mais conveniente, ou ambos):
+The API adopts **Stateless authentication based on JWT**, offering support for two ways of sending the token (the front-end can use whichever is more convenient, or both):
 
-### Modo 1: Cookie HttpOnly (Recomendado para Navegadores)
-* Ao efetuar login com sucesso (`POST /auth/login`), a API retorna o header `Set-Cookie`:
+### Mode 1: HttpOnly Cookie (Recommended for Browsers)
+* Upon successful login (`POST /auth/login`), the API returns the `Set-Cookie` header:
   ```http
   Set-Cookie: gallery_token=<token_jwt>; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax
   ```
-* **Requisito no Front-end**: Todas as requisições (via Axios ou Fetch) devem habilitar o envio de credenciais entre origens:
+* **Front-end Requirement**: All requests (via Axios or Fetch) must enable sending cross-origin credentials:
   * **Axios**: `axios.defaults.withCredentials = true;`
   * **Fetch**: `fetch(url, { credentials: 'include', ... })`
-* Ao fazer logout (`POST /auth/logout`), o cookie é automaticamente invalidado (`Max-Age=0`).
+* Upon logout (`POST /auth/logout`), the cookie is automatically invalidated (`Max-Age=0`).
 
-### Modo 2: Header Authorization Bearer
-* O corpo da resposta de `POST /auth/login` também inclui o campo `token` (String).
-* O front-end pode armazenar esse token e passá-lo manualmente nos cabeçalhos HTTP:
+### Mode 2: Authorization Bearer Header
+* The response body of `POST /auth/login` also includes the `token` field (String).
+* The front-end can store this token and pass it manually in the HTTP headers:
   ```http
   Authorization: Bearer <seu_token_jwt>
   ```
 
-### Política de CORS e Variáveis de Ambiente
-* Em desenvolvimento, certifique-se de configurar a URL base da API:
-  * Variável de ambiente recomendada no front-end: `VITE_API_BASE_URL` ou `NEXT_PUBLIC_API_BASE_URL`.
-  * Exemplo: `http://localhost:8080` (ou a porta alocada pelo Eureka / Gateway).
+### CORS Policy and Environment Variables
+* In development, ensure you configure the API base URL:
+  * Recommended environment variable in the front-end: `VITE_API_BASE_URL` or `NEXT_PUBLIC_API_BASE_URL`.
+  * Example: `http://localhost:8080` (or the port allocated by Eureka / Gateway).
 
 ---
 
-## 3. Tipos e Modelos (TypeScript Interfaces)
+## 3. Types and Models (TypeScript Interfaces)
 
-Copie e utilize estas interfaces TypeScript diretamente na aplicação front-end:
+Copy and use these TypeScript interfaces directly in the front-end application:
 
 ```typescript
 // ==================== USUÁRIOS & AUTENTICAÇÃO ====================
@@ -127,15 +127,15 @@ export interface ErrorResponse {
 
 ---
 
-## 4. Catálogo Detalhado de Endpoints
+## 4. Detailed Endpoint Catalog
 
-### 4.1 Módulo: Autenticação (`/auth`)
+### 4.1 Module: Authentication (`/auth`)
 
 ---
 
 #### `POST /auth/cadastro`
-Cadastra um novo usuário no sistema e dispara e-mail de boas-vindas assíncrono.
-* **Acesso**: Público (sem autenticação)
+Registers a new user in the system and triggers an asynchronous welcome e-mail.
+* **Access**: Public (without authentication)
 * **Headers**: `Content-Type: application/json`
 * **Body**:
   ```json
@@ -145,13 +145,13 @@ Cadastra um novo usuário no sistema e dispara e-mail de boas-vindas assíncrono
     "senha": "senhaSegura123"
   }
   ```
-* **Respostas**:
-  * `201 Created` - Sem corpo de resposta.
+* **Responses**:
+  * `201 Created` - No response body.
   * `500 Internal Server Error`:
     ```json
     { "error": "Email já cadastrado." }
     ```
-    ou
+    or
     ```json
     { "error": "Nome indisponível." }
     ```
@@ -159,8 +159,8 @@ Cadastra um novo usuário no sistema e dispara e-mail de boas-vindas assíncrono
 ---
 
 #### `POST /auth/login`
-Autentica o usuário, retorna o token JWT e injeta o cookie HTTP-Only.
-* **Acesso**: Público
+Authenticates the user, returns the JWT token, and injects the HTTP-Only cookie.
+* **Access**: Public
 * **Headers**: `Content-Type: application/json`
 * **Body**:
   ```json
@@ -169,7 +169,7 @@ Autentica o usuário, retorna o token JWT e injeta o cookie HTTP-Only.
     "senha": "senhaSegura123"
   }
   ```
-* **Respostas**:
+* **Responses**:
   * `200 OK` + Header `Set-Cookie: gallery_token=...`:
     ```json
     {
@@ -190,28 +190,28 @@ Autentica o usuário, retorna o token JWT e injeta o cookie HTTP-Only.
 ---
 
 #### `POST /auth/logout`
-Encerra a sessão do usuário e deleta o cookie de autenticação do navegador.
-* **Acesso**: Público / Autenticado
-* **Headers**: Nenhum
-* **Respostas**:
-  * `200 OK` (com `Set-Cookie: gallery_token=; Max-Age=0`):
+Ends the user session and deletes the authentication cookie from the browser.
+* **Access**: Public / Authenticated
+* **Headers**: None
+* **Responses**:
+  * `200 OK` (with `Set-Cookie: gallery_token=; Max-Age=0`):
     ```
     "Logout realizado com sucesso."
     ```
 
 ---
 
-### 4.2 Módulo: Arquivos (`/arquivos`)
+### 4.2 Module: Files (`/arquivos`)
 
 ---
 
 #### `POST /arquivos/upload`
-Realiza o upload de uma única imagem para a galeria do usuário.
-* **Acesso**: Autenticado
+Uploads a single image to the user's gallery.
+* **Access**: Authenticated
 * **Headers**: `Content-Type: multipart/form-data`
 * **Form-Data**:
-  * `file`: Arquivo binário (extensões aceitas: `.jpg`, `.jpeg`, `.png`, `.webp` | tamanho máx: 10MB)
-* **Respostas**:
+  * `file`: Binary file (accepted extensions: `.jpg`, `.jpeg`, `.png`, `.webp` | max size: 10MB)
+* **Responses**:
   * `201 Created`:
     ```json
     {
@@ -229,13 +229,13 @@ Realiza o upload de uma única imagem para a galeria do usuário.
 ---
 
 #### `POST /arquivos/upload-batch`
-Upload de múltiplas imagens simultaneamente.
-* **Acesso**: Autenticado
+Uploads multiple images simultaneously.
+* **Access**: Authenticated
 * **Headers**: `Content-Type: multipart/form-data`
 * **Form-Data**:
-  * `files`: Lista de arquivos (`files` repetido para cada arquivo)
-* **Respostas**:
-  * `200 OK`: Array de `ArquivoResponseDTO`
+  * `files`: List of files (`files` repeated for each file)
+* **Responses**:
+  * `200 OK`: Array of `ArquivoResponseDTO`
     ```json
     [
       {
@@ -256,47 +256,47 @@ Upload de múltiplas imagens simultaneamente.
 ---
 
 #### `GET /arquivos`
-Recupera todas as imagens enviadas pelo usuário logado.
-* **Acesso**: Autenticado
-* **Respostas**:
-  * `200 OK`: Array de `ArquivoResponseDTO`
+Retrieves all images uploaded by the logged-in user.
+* **Access**: Authenticated
+* **Responses**:
+  * `200 OK`: Array of `ArquivoResponseDTO`
 
 ---
 
 #### `GET /arquivos/download/{id}`
-Download ou visualização direta via streaming do backend.
-* **Acesso**: Autenticado
-* **Path Variables**: `id` (ID da imagem)
+Download or direct viewing via streaming from the backend.
+* **Access**: Authenticated
+* **Path Variables**: `id` (Image ID)
 * **Query Params**:
-  * `isAttachment` (opcional, boolean, padrão: `false`): Se `false`, o header `Content-Disposition` será `inline` (ótimo para visualização direta); se `true`, será `attachment` (força o download no browser).
-* **Respostas**:
-  * `200 OK`: Stream binário do arquivo com o `Content-Type` correspondente (`image/jpeg`, `image/png`, etc.).
+  * `isAttachment` (optional, boolean, default: `false`): If `false`, the `Content-Disposition` header will be `inline` (great for direct viewing); if `true`, it will be `attachment` (forces download in the browser).
+* **Responses**:
+  * `200 OK`: Binary stream of the file with the corresponding `Content-Type` (`image/jpeg`, `image/png`, etc.).
   * `404 Not Found`: `{ "error": "Arquivo não encontrado." }`
 
 ---
 
 #### `GET /arquivos/download-batch`
-Faz download de várias imagens selecionadas em um arquivo `.zip` único.
-* **Acesso**: Autenticado
-* **Query Params**: `ids` (Lista de IDs numéricos, ex: `?ids=1&ids=2&ids=3` ou `?ids=1,2,3`)
-* **Respostas**:
-  * `200 OK`: Arquivo binário `application/zip`, `Content-Disposition: attachment; filename="fotos_galeria.zip"`
-  * `404 Not Found`: `{ "error": "Arquivo não encontrado." }` (se algum dos IDs não existir ou não pertencer ao usuário)
+Downloads multiple selected images in a single `.zip` file.
+* **Access**: Authenticated
+* **Query Params**: `ids` (List of numeric IDs, ex: `?ids=1&ids=2&ids=3` or `?ids=1,2,3`)
+* **Responses**:
+  * `200 OK`: Binary file `application/zip`, `Content-Disposition: attachment; filename="fotos_galeria.zip"`
+  * `404 Not Found`: `{ "error": "Arquivo não encontrado." }` (if any of the IDs do not exist or do not belong to the user)
 
 ---
 
 #### `GET /arquivos/public/download`
-Acesso **público** para visualização da capa de um álbum a partir do token de convite.
-* **Acesso**: Público (não exige login)
+**Public** access for viewing an album cover using the invitation token.
+* **Access**: Public (does not require login)
 * **Query Params**:
-  * `token` (obrigatório, string): UUID do convite enviado por e-mail.
-* **Respostas**:
-  * `200 OK`: Stream binário da imagem de capa (`inline`).
+  * `token` (required, string): UUID of the invitation sent via e-mail.
+* **Responses**:
+  * `200 OK`: Binary stream of the cover image (`inline`).
   * `403 Forbidden`:
     ```json
     { "error": "Convite expirado ou já utilizado." }
     ```
-    ou
+    or
     ```json
     { "error": "Token inválido ou expirado." }
     ```
@@ -304,35 +304,35 @@ Acesso **público** para visualização da capa de um álbum a partir do token d
 ---
 
 #### `DELETE /arquivos/delete/{id}`
-Deleta permanentemente uma imagem do storage e do banco de dados.
-* **Acesso**: Autenticado (somente o dono do arquivo)
-* **Path Variables**: `id` (ID da imagem)
-* **Respostas**:
-  * `204 No Content` - Sem corpo de resposta.
+Permanently deletes an image from storage and the database.
+* **Access**: Authenticated (only the file owner)
+* **Path Variables**: `id` (Image ID)
+* **Responses**:
+  * `204 No Content` - No response body.
   * `404 Not Found`: `{ "error": "Arquivo não encontrado." }`
 
 ---
 
 #### `DELETE /arquivos/delete-batch`
-Deleta múltiplas imagens de uma vez.
-* **Acesso**: Autenticado
-* **Query Params**: `ids` (Lista de IDs, ex: `?ids=1&ids=2`)
-* **Respostas**:
-  * `200 OK`: Array de IDs deletados: `[1, 2]`
+Deletes multiple images at once.
+* **Access**: Authenticated
+* **Query Params**: `ids` (List of IDs, ex: `?ids=1&ids=2`)
+* **Responses**:
+  * `200 OK`: Array of deleted IDs: `[1, 2]`
 
 ---
 
-### 4.3 Módulo: Álbuns (`/albuns`)
+### 4.3 Module: Albums (`/albuns`)
 
 ---
 
 #### `POST /albuns/novo`
-Cria um novo álbum a partir de fotos já enviadas pelo usuário. A primeira foto da lista é automaticamente definida como a capa inicial.
-* **Acesso**: Autenticado
+Creates a new album from photos already uploaded by the user. The first photo in the list is automatically set as the initial cover.
+* **Access**: Authenticated
 * **Query / Form Params**:
-  * `nome` (string): Nome do álbum
-  * `arquivoIds` (List<number>): Lista de IDs das imagens a associar (ex: `?arquivoIds=1&arquivoIds=2&nome=Viagem`)
-* **Respostas**:
+  * `nome` (string): Album name
+  * `arquivoIds` (List<number>): List of image IDs to associate (ex: `?arquivoIds=1&arquivoIds=2&nome=Viagem`)
+* **Responses**:
   * `201 Created`:
     ```json
     {
@@ -346,10 +346,10 @@ Cria um novo álbum a partir de fotos já enviadas pelo usuário. A primeira fot
 ---
 
 #### `GET /albuns`
-Lista todos os álbuns **criados** pelo usuário autenticado.
-* **Acesso**: Autenticado
-* **Respostas**:
-  * `200 OK`: Array de `AlbumResumoDTO`
+Lists all albums **created** by the authenticated user.
+* **Access**: Authenticated
+* **Responses**:
+  * `200 OK`: Array of `AlbumResumoDTO`
     ```json
     [
       {
@@ -363,19 +363,19 @@ Lista todos os álbuns **criados** pelo usuário autenticado.
 ---
 
 #### `GET /albuns/sharedWithMe`
-Lista os álbuns compartilhados com o usuário autenticado (onde ele foi convidado).
-* **Acesso**: Autenticado
-* **Respostas**:
-  * `200 OK`: Array de `AlbumResumoDTO`
+Lists the albums shared with the authenticated user (where they were invited).
+* **Access**: Authenticated
+* **Responses**:
+  * `200 OK`: Array of `AlbumResumoDTO`
 
 ---
 
 #### `GET /albuns/{id}`
-Recupera os detalhes completos de um álbum (fotos, capa, criador e lista de convidados). O usuário precisa ser o criador ou estar na lista de convidados.
-* **Acesso**: Autenticado
-* **Path Variables**: `id` (ID do álbum)
-* **Respostas**:
-  * `200 OK`: Objeto `AlbumDetalhadoDTO`:
+Retrieves the complete details of an album (photos, cover, creator, and guest list). The user must be the creator or be on the guest list.
+* **Access**: Authenticated
+* **Path Variables**: `id` (Album ID)
+* **Responses**:
+  * `200 OK`: `AlbumDetalhadoDTO` object:
     ```json
     {
       "id": 5,
@@ -415,72 +415,72 @@ Recupera os detalhes completos de um álbum (fotos, capa, criador e lista de con
 ---
 
 #### `GET /albuns/download/{id}`
-Faz o download de todas as imagens do álbum compactadas em um único arquivo `.zip`.
-* **Acesso**: Autenticado (criador ou convidado)
-* **Path Variables**: `id` (ID do álbum)
-* **Respostas**:
-  * `200 OK`: Arquivo `application/zip` (`Content-Disposition: attachment; filename="<NomeDoAlbum>"`).
-  * `400 Bad Request`: Se o álbum não tiver fotos.
-  * `404 Not Found`: Se o álbum não existir ou usuário não tiver acesso.
+Downloads all images from the album compressed into a single `.zip` file.
+* **Access**: Authenticated (creator or guest)
+* **Path Variables**: `id` (Album ID)
+* **Responses**:
+  * `200 OK`: `application/zip` file (`Content-Disposition: attachment; filename="<NomeDoAlbum>"`).
+  * `400 Bad Request`: If the album has no photos.
+  * `404 Not Found`: If the album does not exist or the user has no access.
 
 ---
 
 #### `PUT /albuns/add/{albumId}/imagem/{imagemId}`
-Adiciona uma imagem que pertence ao usuário a um álbum acessível.
-* **Acesso**: Autenticado
-* **Path Variables**: `albumId` (ID do álbum), `imagemId` (ID da imagem)
-* **Respostas**:
-  * `201 Created` - Sem corpo.
+Adds an image belonging to the user to an accessible album.
+* **Access**: Authenticated
+* **Path Variables**: `albumId` (Album ID), `imagemId` (Image ID)
+* **Responses**:
+  * `201 Created` - No body.
   * `400 Bad Request`: `{ "error": "Essa imagem já existe nesse álbum." }`
 
 ---
 
 #### `PUT /albuns/add-batch/{albumId}`
-Adiciona múltiplas imagens ao álbum simultaneamente.
-* **Acesso**: Autenticado
+Adds multiple images to the album simultaneously.
+* **Access**: Authenticated
 * **Path Variables**: `albumId`
 * **Query Params**: `imageIds` (ex: `?imageIds=1&imageIds=2`)
-* **Respostas**:
-  * `201 Created` - Sem corpo.
+* **Responses**:
+  * `201 Created` - No body.
 
 ---
 
 #### `DELETE /albuns/delete/{id}`
-Deleta um álbum permanentemente.
-* **Acesso**: Autenticado (**Apenas o criador do álbum**)
+Permanently deletes an album.
+* **Access**: Authenticated (**Only the album creator**)
 * **Path Variables**: `id`
-* **Respostas**:
+* **Responses**:
   * `204 No Content`
   * `404 Not Found`: `{ "error": "Album não encontrado." }`
 
 ---
 
 #### `DELETE /albuns/delete/{albumId}/imagem/{imagemId}`
-Remove uma imagem específica de um álbum.
-* **Acesso**: Autenticado
-* **Regras de Permissão**: O usuário logado deve ser o **dono do álbum** OU o usuário que **adicionou** aquela imagem ao álbum.
-* **Efeito Colateral**: Se o álbum ficar sem nenhuma foto restante e o usuário for o criador, o álbum é excluído automaticamente.
-* **Respostas**:
-  * `204 No Content`: Retorna o ID da imagem removida no corpo: `imagemId`.
+Removes a specific image from an album.
+* **Access**: Authenticated
+* **Permission Rules**: The logged-in user must be the **album owner** OR the user who **added** that image to the album.
+* **Side Effect**: If the album is left with no photos remaining and the user is the creator, the album is automatically deleted.
+* **Responses**:
+  * `204 No Content`: Returns the removed image ID in the body: `imagemId`.
   * `403 Forbidden`: `{ "error": "Você só pode remover fotos que você mesmo adicionou neste álbum." }`
 
 ---
 
 #### `DELETE /albuns/delete-batch/{albumId}`
-Remove um lote de imagens de um álbum.
-* **Acesso**: Autenticado
-* **Query Params**: `imageIds` (Lista de IDs numéricos)
-* **Respostas**:
-  * `204 No Content`: Retorna a lista de IDs removidos: `[1, 2]`.
+Removes a batch of images from an album.
+* **Access**: Authenticated
+* **Query Params**: `imageIds` (List of numeric IDs)
+* **Responses**:
+  * `204 No Content`: Returns the list of removed IDs: `[1, 2]`.
 
 ---
 
 #### `POST /albuns/invite/{id}`
-Envia um convite de colaboração para outro usuário via e-mail (usando fila assíncrona RabbitMQ).
-* **Acesso**: Autenticado (**Apenas o criador do álbum**)
-* **Path Variables**: `id` (ID do álbum)
-* **Query Params**: `email` (E-mail do usuário a convidar)
-* **Respostas**:
+Sends a collaboration invitation to another user via e-mail (using asynchronous RabbitMQ queue).
+* **Access**: Authenticated (**Only the album creator**)
+* **Path Variables**: `id` (Album ID)
+* **Query Params**: `email` (E-mail of the user to invite)
+* **Responses**:
   * `200 OK`
   * `409 Conflict`: `{ "error": "Você não pode se convidar para o próprio album" }`
   * `404 Not Found`: `{ "error": "Usuario não encontrado." }`
@@ -488,29 +488,29 @@ Envia um convite de colaboração para outro usuário via e-mail (usando fila as
 ---
 
 #### `POST /albuns/kick/{id}`
-Remove um colaborador/convidado do álbum.
-* **Acesso**: Autenticado (**Apenas o criador do álbum**)
-* **Path Variables**: `id` (ID do álbum)
-* **Query Params**: `email` (E-mail do usuário a remover)
-* **Respostas**:
+Removes a collaborator/guest from the album.
+* **Access**: Authenticated (**Only the album creator**)
+* **Path Variables**: `id` (Album ID)
+* **Query Params**: `email` (E-mail of the user to remove)
+* **Responses**:
   * `200 OK`
   * `404 Not Found`: `{ "error": "Usuario não encontrado." }`
 
 ---
 
 #### `POST /albuns/uninvite/{id}`
-Cancela um convite que foi enviado anteriormente.
-* **Acesso**: Autenticado (**Apenas o criador do álbum**)
+Cancels an invitation that was previously sent.
+* **Access**: Authenticated (**Only the album creator**)
 * **Path Variables**: `id`
 * **Query Params**: `email`
-* **Respostas**:
+* **Responses**:
   * `200 OK`
 
 ---
 
-## 5. Fluxos Essenciais de Frontend e Exemplos Práticos
+## 5. Essential Frontend Flows and Practical Examples
 
-### 5.1 Configuração do Cliente HTTP (Exemplo Axios)
+### 5.1 HTTP Client Configuration (Axios Example)
 
 ```typescript
 // src/services/api.ts
@@ -518,10 +518,10 @@ import axios from 'axios';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  withCredentials: true, // ESSENCIAL: envia e recebe o cookie gallery_token
+  withCredentials: true, // ESSENTIAL: sends and receives the gallery_token cookie
 });
 
-// Fallback opcional com Bearer Token caso queira manter em memória/localStorage
+// Optional fallback with Bearer Token in case you want to keep it in memory/localStorage
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('gallery_token');
   if (token) {
@@ -530,12 +530,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor global para tratamento de erros
+// Global interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 403 && window.location.pathname !== '/login') {
-      // Sessão expirada ou acesso negado
+      // Session expired or access denied
       console.warn('Sessão expirada ou acesso não autorizado');
     }
     return Promise.reject(error);
@@ -545,7 +545,7 @@ api.interceptors.response.use(
 
 ---
 
-### 5.2 Upload de Múltiplos Arquivos com Feedback de Progresso
+### 5.2 Multiple File Upload with Progress Feedback
 
 ```typescript
 export async function uploadImagens(files: File[], onProgress?: (percent: number) => void) {
@@ -572,17 +572,17 @@ export async function uploadImagens(files: File[], onProgress?: (percent: number
 
 ---
 
-### 5.3 Exibição de Imagens e Expiração de URLs
+### 5.3 Displaying Images and URL Expiration
 
-As URLs no campo `url` de `ArquivoResponseDTO` são URLs pré-assinadas (*Presigned URLs*) com validade aproximada de **10 minutos**:
-* **Uso direto no JSX**:
+The URLs in the `url` field of `ArquivoResponseDTO` are *Presigned URLs* valid for approximately **10 minutes**:
+* **Direct use in JSX**:
   ```tsx
   <img 
     src={arquivo.url} 
     alt={arquivo.nome} 
     loading="lazy" 
     onError={(e) => {
-      // Se a URL expirar após longa inatividade, refaça o fetch da lista ou do álbum
+      // If the URL expires after long inactivity, refetch the list or the album
       console.error('URL da imagem expirou ou erro ao carregar:', e);
     }} 
   />
@@ -590,9 +590,9 @@ As URLs no campo `url` de `ArquivoResponseDTO` são URLs pré-assinadas (*Presig
 
 ---
 
-### 5.4 Download de Álbum ou Arquivos em Lote (`.zip`)
+### 5.4 Download Album or Files in Batch (`.zip`)
 
-Ao fazer download de binários, informe `responseType: 'blob'`:
+When downloading binaries, specify `responseType: 'blob'`:
 
 ```typescript
 export async function baixarAlbumZip(albumId: number, nomeAlbum: string) {
@@ -600,7 +600,7 @@ export async function baixarAlbumZip(albumId: number, nomeAlbum: string) {
     responseType: 'blob',
   });
 
-  // Dispara o download no navegador
+  // Triggers the download in the browser
   const blob = new Blob([response.data], { type: 'application/zip' });
   const downloadUrl = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -615,28 +615,28 @@ export async function baixarAlbumZip(albumId: number, nomeAlbum: string) {
 
 ---
 
-### 5.5 Tratamento da Tela de Convite (`/albuns/convite?token=<uuid>`)
+### 5.5 Handling the Invitation Screen (`/albuns/convite?token=<uuid>`)
 
-Quando o convidado acessa o link enviado por e-mail:
-1. Obtenha o parâmetro `token` da URL:
+When the guest accesses the link sent via e-mail:
+1. Get the `token` parameter from the URL:
    ```typescript
    const params = new URLSearchParams(window.location.search);
    const token = params.get('token');
    ```
-2. Para exibir a capa do álbum de forma pública (sem exigir login antecipado):
+2. To display the public album cover (without requiring advance login):
    ```tsx
    <img 
      src={`${api.defaults.baseURL}/arquivos/public/download?token=${token}`} 
      alt="Capa do Álbum Convidado" 
    />
    ```
-3. Se o usuário já estiver logado, redirecione-o para a visualização dos álbuns compartilhados (`/albuns/sharedWithMe`).
+3. If the user is already logged in, redirect them to view the shared albums (`/albuns/sharedWithMe`).
 
 ---
 
-## 6. Sumário de Respostas de Erro
+## 6. Summary of Error Responses
 
-A API utiliza o seguinte formato padronizado de erro para exceções de negócio:
+The API uses the following standardized error format for business exceptions:
 
 ```json
 {
@@ -644,15 +644,15 @@ A API utiliza o seguinte formato padronizado de erro para exceções de negócio
 }
 ```
 
-### Tabela de Erros Comuns:
+### Table of Common Errors:
 
-| Código HTTP | Causa / Mensagem | Ação Recomendada no Front-end |
+| HTTP Code | Cause / Message | Recommended Action on Front-end |
 | :--- | :--- | :--- |
-| `400 Bad Request` | `"Extensão da imagem não suportada..."` | Validar extensão no input (`accept="image/png,image/jpeg,image/webp"`). |
-| `400 Bad Request` | `"Essa imagem já existe nesse álbum."` | Notificar o usuário com Toast/Alerta de duplicidade. |
-| `403 Forbidden` | `"Credenciais inválidas."` ou `"Usuário não encontrado."` | Exibir mensagem de erro no formulário de login. |
-| `403 Forbidden` | `"Você só pode remover fotos que você mesmo adicionou neste álbum."` | Ocultar botão de exclusão de fotos que não pertencem ao usuário logado em álbuns compartilhados. |
-| `403 Forbidden` | `"Convite expirado ou já utilizado."` | Indicar que o link do convite perdeu a validade (validade máx: 7 dias). |
-| `404 Not Found` | `"Album não encontrado."` ou `"Arquivo não encontrado."` | Redirecionar para listagem ou exibir mensagem de recurso inexistente. |
-| `409 Conflict` | `"Você não pode se convidar para o próprio album"` | Impedir digitação do próprio e-mail no modal de convite. |
-| `500 Internal Server Error` | `"Erro de processamento ao tentar manipular o arquivo."` | Falha na comunicação com o MinIO/S3. Solicitar nova tentativa. |
+| `400 Bad Request` | `"Extensão da imagem não suportada..."` | Validate extension on input (`accept="image/png,image/jpeg,image/webp"`). |
+| `400 Bad Request` | `"Essa imagem já existe nesse álbum."` | Notify the user with Duplicate Toast/Alert. |
+| `403 Forbidden` | `"Credenciais inválidas."` or `"Usuário não encontrado."` | Display error message on the login form. |
+| `403 Forbidden` | `"Você só pode remover fotos que você mesmo adicionou neste álbum."` | Hide delete button for photos that do not belong to the logged-in user in shared albums. |
+| `403 Forbidden` | `"Convite expirado ou já utilizado."` | Indicate that the invitation link is no longer valid (max validity: 7 days). |
+| `404 Not Found` | `"Album não encontrado."` or `"Arquivo não encontrado."` | Redirect to listing or display missing resource message. |
+| `409 Conflict` | `"Você não pode se convidar para o próprio album"` | Prevent typing own e-mail in the invitation modal. |
+| `500 Internal Server Error` | `"Erro de processamento ao tentar manipular o arquivo."` | Failure to communicate with MinIO/S3. Request a retry. |

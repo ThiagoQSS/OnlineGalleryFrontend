@@ -26,11 +26,14 @@ export default function CollaboratorsModal({
 	const [email, setEmail] = useState("");
 	const [loadingInvite, setLoadingInvite] = useState(false);
 	const [kickingEmail, setKickingEmail] = useState<string | null>(null);
-	const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+	const [message, setMessage] = useState<{
+		type: "success" | "error";
+		text: string;
+	} | null>(null);
 
 	if (!isOpen) return null;
 
-	const handleInviteSubmit = async (e: React.FormEvent) => {
+	const handleInviteSubmit = async (e: React.SubmitEvent) => {
 		e.preventDefault();
 		if (!email.trim()) return;
 
@@ -45,10 +48,14 @@ export default function CollaboratorsModal({
 			});
 			setEmail("");
 		} catch (err: unknown) {
-			const errorObj = err as { response?: { data?: { error?: string } } };
+			const errorObj = err as {
+				response?: { data?: { error?: string } };
+			};
 			setMessage({
 				type: "error",
-				text: errorObj.response?.data?.error || "Erro ao enviar convite. Verifique o e-mail digitado.",
+				text:
+					errorObj.response?.data?.error ||
+					"Erro ao enviar convite. Verifique o e-mail digitado.",
 			});
 		} finally {
 			setLoadingInvite(false);
@@ -65,10 +72,14 @@ export default function CollaboratorsModal({
 				text: `Colaborador ${userEmail} removido com sucesso.`,
 			});
 		} catch (err: unknown) {
-			const errorObj = err as { response?: { data?: { error?: string } } };
+			const errorObj = err as {
+				response?: { data?: { error?: string } };
+			};
 			setMessage({
 				type: "error",
-				text: errorObj.response?.data?.error || "Erro ao remover colaborador.",
+				text:
+					errorObj.response?.data?.error ||
+					"Erro ao remover colaborador.",
 			});
 		} finally {
 			setKickingEmail(null);
@@ -93,9 +104,12 @@ export default function CollaboratorsModal({
 							<Icon.Users className="w-5 h-5" />
 						</div>
 						<div>
-							<h3 className="text-base font-bold">Colaboradores do Álbum</h3>
+							<h3 className="text-base font-bold">
+								Colaboradores do Álbum
+							</h3>
 							<p className="text-xs text-foreground2">
-								Pessoas que têm acesso a visualizar e adicionar fotos
+								Pessoas que têm acesso a visualizar e adicionar
+								fotos
 							</p>
 						</div>
 					</div>
@@ -129,10 +143,19 @@ export default function CollaboratorsModal({
 
 				{/* Formulário de Envio de Convite (somente criador) */}
 				{isCreator && (
-					<form onSubmit={handleInviteSubmit} className="flex flex-col gap-2">
-						<label htmlFor="inviteEmail" className="text-xs font-semibold text-foreground">
+					<form
+						onSubmit={handleInviteSubmit}
+						className="flex flex-col gap-2"
+					>
+						<label
+							htmlFor="inviteEmail"
+							className="text-xs font-semibold text-foreground"
+						>
 							Convidar novo colaborador por e-mail
 						</label>
+						<p className="text-[10px] text-foreground2 mb-1">
+							O usuário receberá um convite para acessar e colaborar neste álbum.
+						</p>
 						<div className="flex items-center gap-2">
 							<div className="relative flex-1">
 								<Icon.Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground2" />
@@ -172,13 +195,17 @@ export default function CollaboratorsModal({
 					<div className="flex items-center justify-between p-2.5 rounded-2xl bg-background2/50 border border-white/5">
 						<div className="flex items-center gap-3">
 							<div className="w-8 h-8 rounded-full bg-selected-surface text-selected-surface2 flex items-center justify-center font-bold text-xs">
-								{criador?.nome ? criador.nome.charAt(0).toUpperCase() : "C"}
+								{criador?.nome
+									? criador.nome.charAt(0).toUpperCase()
+									: "C"}
 							</div>
 							<div className="flex flex-col">
 								<span className="text-xs font-semibold text-foreground">
 									{criador?.nome} (Criador)
 								</span>
-								<span className="text-[11px] text-foreground2">{criador?.email}</span>
+								<span className="text-[11px] text-foreground2">
+									{criador?.email}
+								</span>
 							</div>
 						</div>
 						<span className="text-[10px] px-2 py-0.5 rounded-full bg-selected-surface/50 text-selected-surface2 font-medium">
@@ -194,11 +221,17 @@ export default function CollaboratorsModal({
 						>
 							<div className="flex items-center gap-3">
 								<div className="w-8 h-8 rounded-full bg-surface1 text-foreground flex items-center justify-center font-bold text-xs">
-									{user?.nome ? user.nome.charAt(0).toUpperCase() : "U"}
+									{user?.nome
+										? user.nome.charAt(0).toUpperCase()
+										: "U"}
 								</div>
 								<div className="flex flex-col">
-									<span className="text-xs font-semibold text-foreground">{user?.nome}</span>
-									<span className="text-[11px] text-foreground2">{user?.email}</span>
+									<span className="text-xs font-semibold text-foreground">
+										{user?.nome}
+									</span>
+									<span className="text-[11px] text-foreground2">
+										{user?.email}
+									</span>
 								</div>
 							</div>
 

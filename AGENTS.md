@@ -6,4 +6,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
+# Agent Instructions
+
+    CRITICAL: Before modifying any React components, state management, or backend API integrations, you MUST use
+
+`view_file` to read both: - `.agents/skills/architecture/SKILL.md` - `.agents/skills/backend/SKILL.md`
+Do not make assumptions about data fetching or state mutation without checking these guides first.
+
 <!-- END:nextjs-agent-rules -->

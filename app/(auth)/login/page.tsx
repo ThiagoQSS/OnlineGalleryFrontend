@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
-import bgImage from "@/assets/collage.jpg";
+import bgImage from "@/assets/gemini_image.jpg";
 import { AxiosError } from "axios";
 import Image from "next/image";
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
 				alt="Background Online Gallery"
 				fill
 				priority
-				quality={85}
+				quality={100}
 				className="object-cover object-center"
 			/>
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
 								required
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
-								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-taupe-50 placeholder-amber-50"
+								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-blue-300 focus:outline-none text-taupe-50 placeholder-amber-50"
 							/>
 						</div>
 						<div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
 								required
 								value={senha}
 								onChange={(e) => setSenha(e.target.value)}
-								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-black focus:outline-none text-taupe-50 placeholder-amber-50"
+								className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-blue-300 focus:outline-none text-taupe-50 placeholder-amber-50"
 							/>
 						</div>
 					</div>
