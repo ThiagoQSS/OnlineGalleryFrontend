@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ArquivoResponseDTO } from "@/types/api";
+import { ArquivoResponseDTO, AlbumDetalhadoDTO } from "@/types/api";
 import { photoService } from "@/services/photoService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -188,7 +188,26 @@ export function usePhotos() {
 		async (id: number) => {
 			try {
 				await photoService.deletePhoto(id);
+				
+				// Remove from photos cache
 				queryClient.setQueryData<ArquivoResponseDTO[]>(["photos"], (prev = []) => prev.filter((p) => p.id !== id));
+				
+				// Remove from all album details caches
+				queryClient.setQueriesData<AlbumDetalhadoDTO>(
+					{ queryKey: ["albumDetails"] },
+					(oldData) => {
+						if (!oldData) return oldData;
+						const filteredImages = oldData.images.filter(img => img.id !== id);
+						if (filteredImages.length === oldData.images.length) return oldData;
+						
+						return {
+							...oldData,
+							images: filteredImages,
+							capa: oldData.capa?.id === id ? (filteredImages[0] || null) : oldData.capa
+						};
+					}
+				);
+
 				setSelectedIds((prev) => {
 					const next = new Set(prev);
 					next.delete(id);
@@ -211,7 +230,26 @@ export function usePhotos() {
 		const idsArray = Array.from(selectedIds);
 		try {
 			await photoService.deletePhotosBatch(idsArray);
+			
+			// Remove from photos cache
 			queryClient.setQueryData<ArquivoResponseDTO[]>(["photos"], (prev = []) => prev.filter((p) => !selectedIds.has(p.id)));
+			
+			// Remove from all album details caches
+			queryClient.setQueriesData<AlbumDetalhadoDTO>(
+				{ queryKey: ["albumDetails"] },
+				(oldData) => {
+					if (!oldData) return oldData;
+					const filteredImages = oldData.images.filter(img => !selectedIds.has(img.id));
+					if (filteredImages.length === oldData.images.length) return oldData;
+					
+					return {
+						...oldData,
+						images: filteredImages,
+						capa: oldData.capa && selectedIds.has(oldData.capa.id) ? (filteredImages[0] || null) : oldData.capa
+					};
+				}
+			);
+
 			clearSelection();
 		} catch (err) {
 			console.error("Erro ao deletar fotos em lote:", err);

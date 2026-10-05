@@ -8,6 +8,7 @@ import PhotoLightbox from "@/components/photos/PhotoLightbox";
 import PhotoUploadModal from "@/components/photos/PhotoUploadModal";
 import PhotoBatchBar from "@/components/photos/PhotoBatchBar";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import AddToAlbumModal from "@/components/photos/AddToAlbumModal";
 import { useRouter } from "next/navigation";
 
 export default function PhotosPage() {
@@ -39,6 +40,7 @@ export default function PhotosPage() {
 	} = usePhotos();
 
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
+	const [isAddToAlbumOpen, setIsAddToAlbumOpen] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState<{
 		isOpen: boolean;
 		singleId?: number;
@@ -281,11 +283,15 @@ export default function PhotosPage() {
 				onClearSelection={clearSelection}
 				onDownloadSelected={() => downloadSelectedPhotos()}
 				onDeleteSelected={handleDeleteBatch}
-				onAddToAlbum={() => {
-					// Redireciona para criação de álbum com as fotos já selecionadas
-					router.push(
-						`/albuns/novo?selectedPhotos=${Array.from(selectedIds).join(",")}`,
-					);
+				onAddToAlbum={() => setIsAddToAlbumOpen(true)}
+			/>
+
+			<AddToAlbumModal
+				isOpen={isAddToAlbumOpen}
+				onClose={() => setIsAddToAlbumOpen(false)}
+				selectedIds={selectedIds}
+				onSuccess={() => {
+					clearSelection();
 				}}
 			/>
 
